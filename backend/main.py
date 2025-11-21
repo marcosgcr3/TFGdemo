@@ -347,28 +347,18 @@ async def shutdown_event():
     print("\n🛑 Cerrando aplicación...")
     print("✅ Aplicación cerrada\n")
 
-# Configurar CORS
-# En producción, permitir todos los orígenes de Vercel
-# En desarrollo, solo localhost
-if os.getenv("DATABASE_URL"):  # Producción
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origin_regex=r"https://.*\.vercel\.app",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-else:  # Desarrollo
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[
-            "http://localhost:5173",
-            "http://localhost:5174",
-        ],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# Configurar CORS - permitir Vercel y localhost
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Todos los dominios de Vercel
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Endpoints para Personas
 @app.get("/personas/", response_model=List[Persona])
