@@ -360,6 +360,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Health check endpoint para Railway
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "database": "connected"}
+
 # Endpoints para Personas
 @app.get("/personas/", response_model=List[Persona])
 def get_personas(db: Session = Depends(get_db)):
