@@ -331,8 +331,12 @@ async def shutdown_event():
 
 origins = [
     "http://localhost:5173",
-    "http://localhost:5174"
+    "http://localhost:5174",
+    os.getenv("FRONTEND_URL", "")  # URL de Vercel en producción
 ]
+
+# Filtrar orígenes vacíos
+origins = [origin for origin in origins if origin]
 
 app.add_middleware(
     CORSMiddleware,
