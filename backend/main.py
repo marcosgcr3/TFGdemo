@@ -32,8 +32,21 @@ except ImportError as e:
     CHATBOT_ENABLED = False
 
 # Config de la BD
-DB_PATH = "../data/PICUVIMO.db"
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
+# En producción usa PostgreSQL, en desarrollo SQLite
+DATABASE_URL = os.getenv("DATABASE_URL")
+DB_PATH = None  # Inicializar DB_PATH
+
+if DATABASE_URL:
+    # Railway proporciona DATABASE_URL, pero necesitamos ajustar el esquema
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URL = DATABASE_URL
+    print("🐘 Usando PostgreSQL (Producción)")
+else:
+    # Desarrollo local con SQLite
+    DB_PATH = "../data/PICUVIMO.db"
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
+    print("📁 Usando SQLite (Desarrollo)")
 
 # Carpeta para las imágenes
 IMAGENES_DIR = Path("../data/imagenes")
@@ -52,10 +65,15 @@ def get_registered_images():
         print(f"Error obteniendo imágenes: {e}")
         return []
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
-    connect_args={"check_same_thread": False}
-)
+# Configurar el engine según el tipo de base de datos
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL, 
+        connect_args={"check_same_thread": False}
+    )
+else:
+    # PostgreSQL no necesita check_same_thread
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
@@ -1014,6 +1032,12 @@ async def chatbot_query(query: ChatbotQuery):
             detail="Chatbot no disponible. Instala Ollama desde: https://ollama.com"
         )
     
+    if DB_PATH is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Chatbot no disponible en producción"
+        )
+    
     try:
         # Obtener servicio de chatbot
         chatbot = get_chatbot_service(DB_PATH)
@@ -1043,6 +1067,12 @@ async def chatbot_status():
         return {
             "enabled": False,
             "message": "Chatbot no configurado. Instala Ollama desde: https://ollama.com"
+        }
+    
+    if DB_PATH is None:
+        return {
+            "enabled": False,
+            "message": "Chatbot no disponible en producción (requiere SQLite local)"
         }
     
     try:
