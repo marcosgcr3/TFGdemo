@@ -350,8 +350,19 @@ async def shutdown_event():
 origins = [
     "http://localhost:5173",
     "http://localhost:5174",
-    os.getenv("FRONTEND_URL", "")  # URL de Vercel en producción
 ]
+
+# Añadir URL de producción de Vercel si está configurada
+frontend_url = os.getenv("FRONTEND_URL", "")
+if frontend_url:
+    origins.append(frontend_url)
+
+# En producción, permitir todos los dominios de Vercel
+# Esto cubre URLs de preview y producción
+if os.getenv("DATABASE_URL"):  # Si estamos en producción
+    origins.extend([
+        "https://*.vercel.app",
+    ])
 
 # Filtrar orígenes vacíos
 origins = [origin for origin in origins if origin]
@@ -359,6 +370,7 @@ origins = [origin for origin in origins if origin]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Permitir todos los subdominios de Vercel
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
