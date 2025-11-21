@@ -1067,4 +1067,6 @@ if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
     print("✅ Tablas de base de datos creadas/verificadas")
     
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Usar el puerto de Railway si está disponible, sino 8000 por defecto
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
